@@ -11,72 +11,110 @@
 #   Prof.: Fabro
 ###
 
-import numpy as np
-import pandas as pd
-from random import randint
-
-#   Values in the matrix represents the status of that
-#   position, accord to the info below:
-#   Blocked Space == -2
-#   Unused Space == -1
-#   Start Position == 0
-#   Unblocked Space > 0
+from maze import Maze
 
 
-class Maze(pd.DataFrame):
-    def __init__(self, lines: np.int16, collumns: np.int16):
-        # Generating empty matrix then filling with -1
-        # It's faster than use np.full
-        matrix = np.empty((lines, collumns), dtype=np.int16)
-        matrix.fill(-1)
+class Node():
+    """A node class for A* Pathfinding"""
 
-        # This class behave just like an DataFrame
-        super(Maze, self).__init__(matrix, dtype=np.int16)
-        return
+    def __init__(self, parent=None, position=None):
+        self.parent = parent
+        self.position = position
 
-    def generate_maze(self,
-                    start_posX: np.int16, start_posY: np.int16,
-                    destination_posX: np.int16, destination_posY: np.int16):
-        # Getting the shape of this DataFrame
-        lines = self.shape[0]
-        collumns = self.shape[1]
+        self.g = 0
+        self.h = 0
+        self.f = 0
 
-        # Setting the value of each node with the following value:
-        # Distance between start and a node + Distance between this
-        # node and the destination
-        self.iat[start_posX, start_posY] = 0
+    def __eq__(self, other):
+        return self.position == other.position
 
-        distfrom_start = 1
-        total_of_items = lines * collumns
-        iterated_items = 1
 
-        while iterated_items < total_of_items:
-            for i in np.arange(start_posX - distfrom_start,
-                               start_posX + distfrom_start + 1):
-                for j in np.arange(start_posY - distfrom_start,
-                                   start_posY + distfrom_start + 1):
-                    if i < lines and j < collumns and i >= 0 and j >= 0:
-                        if self.iat[i, j] == -1:
-                            if np.abs(i - destination_posX) > \
-                                    np.abs(j - destination_posY):
-                                distfrom_end = np.abs(i - destination_posX)
-                            else:
-                                distfrom_end = np.abs(j - destination_posY)
+def astar(maze, start, end):
+    """Returns a list of tuples as a path from the given start to the given end in the given maze"""
 
-                            self.iat[i, j] = distfrom_start + distfrom_end
-                            iterated_items += 1
-                    j += 1
-                i += 1
-            distfrom_start += 1
+    # Create start and end node
+    start_node = Node(None, start)
+    start_node.g = start_node.h = start_node.f = 0
+    end_node = Node(None, end)
+    end_node.g = end_node.h = end_node.f = 0
 
-        # Blocking randomly positions
-        for i in np.arange(0, lines):
-            for j in np.arange(0, collumns):
-                if randint(0, lines) > 2 * lines / 3:
-                    self.iat[i, j] = -2
-                    
+    # Initialize both open and closed list
+    open_list = []
+    closed_list = []
+
+    # Add the start node
+    open_list.append(start_node)
+
+    # Loop until you find the end
+    while len(open_list) > 0:
+
+        # Get the current node
+        current_node = open_list[0]
+        current_index = 0
+        for index, item in enumerate(open_list):
+            if item.f < current_node.f:
+                current_node = item
+                current_index = index
+
+        # Pop current off open list, add to closed list
+        open_list.pop(current_index)
+        closed_list.append(current_node)
+
+        # Found the goal
+        if current_node == end_node:
+            path = []
+            current = current_node
+            while current is not None:
+                path.append(current.position)
+                current = current.parent
+            return path[::-1]  # Return reversed path
+
+        # Generate children
+        children = []
+        # Adjacent squares
+        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+
+            # Get node position
+            node_position = (
+                current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
+
+            # Make sure within range
+            if node_position[0] > (len(maze) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) - 1) or node_position[1] < 0:
+                continue
+
+            # Make sure walkable terrain
+            if maze[node_position[0]][node_position[1]] != 0:
+                continue
+
+            # Create new node
+            new_node = Node(current_node, node_position)
+
+            # Append
+            children.append(new_node)
+
+        # Loop through children
+        for child in children:
+
+            # Child is on the closed list
+            for closed_child in closed_list:
+                if child == closed_child:
+                    continue
+
+            # Create the f, g, and h values
+            child.g = current_node.g + 1
+            child.h = ((child.position[0] - end_node.position[0]) **
+                       2) + ((child.position[1] - end_node.position[1]) ** 2)
+            child.f = child.g + child.h
+
+            # Child is already in the open list
+            for open_node in open_list:
+                if child == open_node and child.g > open_node.g:
+                    continue
+
+            # Add the child to the open list
+            open_list.append(child)
+
 
 if __name__ == '__main__':
-    teste = Maze(10, 10)
-    teste.generate_maze(0, 2, 1, 9)
-    print(teste.to_string(index=False, header=False, col_space=3))
+    maze = Maze(40, 40)
+    maze.generate(7, 5, 38, 36)
