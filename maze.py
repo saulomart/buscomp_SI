@@ -17,10 +17,10 @@ from random import randint
 
 #   Values in the matrix represents the status of that
 #   position, accord to the info below:
-#   Target == -3
+#   Target Position == -3
 #   Blocked Space == -2
 #   Unused Space == -1
-#   source Position == 0
+#   Source Position == 0
 #   Unblocked Space > 0
 
 
@@ -36,11 +36,12 @@ class Maze(pd.DataFrame):
         return
 
     def generate(self,
-                      source_posX: np.int8, source_posY: np.int8,
-                      target_posX: np.int8, target_posY: np.int8):
-
+                 source_posX: np.int8, source_posY: np.int8,
+                 target_posX: np.int8, target_posY: np.int8,
+                 all_paths=False):
         """
         :param source_posX: TO DO
+        :all_paths: Generate an auxiliar representation of the maze in csv with all costs for visualization
         """
         # Getting the shape of this DataFrame
         lines = self.shape[0]
@@ -64,24 +65,28 @@ class Maze(pd.DataFrame):
                     self.iat[i, j] = -2
                     blocked += 1
 
-        # Filling the unblocked spaces
-        while unblocked + blocked < total_of_items:
-            for i in np.arange(source_posX - distfrom_source,
-                               source_posX + distfrom_source + 1):
-                for j in np.arange(source_posY - distfrom_source,
-                                   source_posY + distfrom_source + 1):
-                    if i < lines and j < collumns and i >= 0 and j >= 0:
-                        if self.iat[i, j] == -1:
-                            if np.abs(i - target_posX) > \
-                                    np.abs(j - target_posY):
-                                distfrom_end = np.abs(i - target_posX)
-                            else:
-                                distfrom_end = np.abs(j - target_posY)
-
-                            self.iat[i, j] = distfrom_source + distfrom_end
-                            unblocked += 1
-                    j += 1
-                i += 1
-            distfrom_source += 1
-
         self.to_csv(path_or_buf='maze.csv', index=False, header=False)
+
+        if all_paths:
+            # Filling the unblocked spaces
+            while unblocked + blocked < total_of_items:
+                for i in np.arange(source_posX - distfrom_source,
+                                   source_posX + distfrom_source + 1):
+                    for j in np.arange(source_posY - distfrom_source,
+                                       source_posY + distfrom_source + 1):
+                        if i < lines and j < collumns and i >= 0 and j >= 0:
+                            if self.iat[i, j] == -1:
+                                if np.abs(i - target_posX) > \
+                                        np.abs(j - target_posY):
+                                    distfrom_end = np.abs(i - target_posX)
+                                else:
+                                    distfrom_end = np.abs(j - target_posY)
+
+                                self.iat[i, j] = distfrom_source + distfrom_end
+                                unblocked += 1
+                        j += 1
+                    i += 1
+                distfrom_source += 1
+
+            self.to_csv(path_or_buf='maze_all_path.csv',
+                        index=False, header=False)
