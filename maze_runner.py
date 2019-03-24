@@ -13,9 +13,14 @@
 
 import numpy as np
 import pandas as pd
+from random import randint
 
-# Values in matrix represents the status of the position
-# 
+#   Values in the matrix represents the status of that
+#   position, accord to the info below:
+#   Blocked Space == -2
+#   Unused Space == -1
+#   Start Position == 0
+#   Unblocked Space > 0
 
 
 class Maze(pd.DataFrame):
@@ -29,14 +34,16 @@ class Maze(pd.DataFrame):
         super(Maze, self).__init__(matrix, dtype=np.int16)
         return
 
-    def trace_route(self,
+    def generate_maze(self,
                     start_posX: np.int16, start_posY: np.int16,
                     destination_posX: np.int16, destination_posY: np.int16):
         # Getting the shape of this DataFrame
         lines = self.shape[0]
         collumns = self.shape[1]
 
-        # Setting the distance between the start position and all nodes
+        # Setting the value of each node with the following value:
+        # Distance between start and a node + Distance between this
+        # node and the destination
         self.iat[start_posX, start_posY] = 0
 
         distfrom_start = 1
@@ -51,7 +58,7 @@ class Maze(pd.DataFrame):
                     if i < lines and j < collumns and i >= 0 and j >= 0:
                         if self.iat[i, j] == -1:
                             if np.abs(i - destination_posX) > \
-                                np.abs(j - destination_posY):
+                                    np.abs(j - destination_posY):
                                 distfrom_end = np.abs(i - destination_posX)
                             else:
                                 distfrom_end = np.abs(j - destination_posY)
@@ -62,10 +69,14 @@ class Maze(pd.DataFrame):
                 i += 1
             distfrom_start += 1
 
-        # Calculating the best route
-
+        # Blocking randomly positions
+        for i in np.arange(0, lines):
+            for j in np.arange(0, collumns):
+                if randint(0, lines) > 2 * lines / 3:
+                    self.iat[i, j] = -2
+                    
 
 if __name__ == '__main__':
     teste = Maze(10, 10)
-    teste.trace_route(2, 2, 9, 9)
+    teste.generate_maze(0, 2, 1, 9)
     print(teste.to_string(index=False, header=False, col_space=3))
