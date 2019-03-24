@@ -1,122 +1,71 @@
 #!/usr/bin/env python3
 
+###
+#   Trabalho Acadêmico Realizado para a disciplina de Sistemas Inteligentes,
+#   do curso de Bach. em Sistemas de Informação na Universidade Técnológica
+#   Federal do Paraná
+#   Tema: Busca Heurística vs Busca Cega
+#   Equipe:   Daniel Eduardo Vieira, 1366424
+#           Saulo Silva, XXXXXX
+#           Diego 'Foobar', XXXXXX
+#   Prof.: Fabro
+###
+
 import numpy as np
+import pandas as pd
 
-class Node():
-    # A node class for A* Pathfinding
-
-    def __init__(self, parent=None, position=None):
-        self.parent = parent
-        self.position = position
-
-        self.g = np.int32
-        self.h = 0
-        self.f = 0
-
-    def __eq__(self, other):
-        return self.position == other.position
+# Values in matrix represents the status of the position
+# 
 
 
-def astar(maze, start, end):
-    # Returns a list of tuples as a path from the given start to the given end in the given maze
+class Maze(pd.DataFrame):
+    def __init__(self, lines: np.int16, collumns: np.int16):
+        # Generating empty matrix then filling with -1
+        # It's faster than use np.full
+        matrix = np.empty((lines, collumns), dtype=np.int16)
+        matrix.fill(-1)
 
-    # Create start and end node
-    start_node = Node(None, start)
-    start_node.g = start_node.h = start_node.f = 0
-    end_node = Node(None, end)
-    end_node.g = end_node.h = end_node.f = 0
+        # This class behave just like an DataFrame
+        super(Maze, self).__init__(matrix, dtype=np.int16)
+        return
 
-    # Initialize both open and closed list
-    open_list = []
-    closed_list = []
+    def trace_route(self,
+                    start_posX: np.int16, start_posY: np.int16,
+                    destination_posX: np.int16, destination_posY: np.int16):
+        # Getting the shape of this DataFrame
+        lines = self.shape[0]
+        collumns = self.shape[1]
 
-    # Add the start node
-    open_list.append(start_node)
+        # Setting the distance between the start position and all nodes
+        self.iat[start_posX, start_posY] = 0
 
-    # Loop until you find the end
-    while len(open_list) > 0:
+        distfrom_start = 1
+        total_of_items = lines * collumns
+        iterated_items = 1
 
-        # Get the current node
-        current_node = open_list[0]
-        current_index = 0
-        for index, item in enumerate(open_list):
-            if item.f < current_node.f:
-                current_node = item
-                current_index = index
+        while iterated_items < total_of_items:
+            for i in np.arange(start_posX - distfrom_start,
+                               start_posX + distfrom_start + 1):
+                for j in np.arange(start_posY - distfrom_start,
+                                   start_posY + distfrom_start + 1):
+                    if i < lines and j < collumns and i >= 0 and j >= 0:
+                        if self.iat[i, j] == -1:
+                            if np.abs(i - destination_posX) > \
+                                np.abs(j - destination_posY):
+                                distfrom_end = np.abs(i - destination_posX)
+                            else:
+                                distfrom_end = np.abs(j - destination_posY)
 
-        # Pop current off open list, add to closed list
-        open_list.pop(current_index)
-        closed_list.append(current_node)
+                            self.iat[i, j] = distfrom_start + distfrom_end
+                            iterated_items += 1
+                    j += 1
+                i += 1
+            distfrom_start += 1
 
-        # Found the goal
-        if current_node == end_node:
-            path = []
-            current = current_node
-            while current is not None:
-                path.append(current.position)
-                current = current.parent
-            return path[::-1]  # Return reversed path
-
-        # Generate children
-        children = []
-        # Adjacent squares
-        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
-
-            # Get node position
-            node_position = (
-                current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
-
-            # Make sure within range
-            if node_position[0] > (len(maze) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) - 1) or node_position[1] < 0:
-                continue
-
-            # Make sure walkable terrain
-            if maze[node_position[0]][node_position[1]] != 0:
-                continue
-
-            # Create new node
-            new_node = Node(current_node, node_position)
-
-            # Append
-            children.append(new_node)
-
-        # Loop through children
-        for child in children:
-
-            # Child is on the closed list
-            for closed_child in closed_list:
-                if child == closed_child:
-                    continue
-
-            # Create the f, g, and h values
-            child.g = current_node.g + 1
-            child.h = ((child.position[0] - end_node.position[0]) **
-                       2) + ((child.position[1] - end_node.position[1]) ** 2)
-            child.f = child.g + child.h
-
-            # Child is already in the open list
-            for open_node in open_list:
-                if child == open_node and child.g > open_node.g:
-                    continue
-
-            # Add the child to the open list
-            open_list.append(child)
+        # Calculating the best route
 
 
 if __name__ == '__main__':
-    maze = [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
-
-    start = (0, 0)
-    end = (7, 6)
-
-    path = astar(maze, start, end)
-    print(path)
+    teste = Maze(10, 10)
+    teste.trace_route(2, 2, 9, 9)
+    print(teste.to_string(index=False, header=False, col_space=3))
