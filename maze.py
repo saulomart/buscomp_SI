@@ -12,81 +12,49 @@
 ###
 
 import numpy as np
-import pandas as pd
-from random import randint
-
-#   Values in the matrix represents the status of that
-#   position, accord to the info below:
-#   Target Position == -3
-#   Blocked Space == -2
-#   Unused Space == -1
-#   Source Position == 0
-#   Unblocked Space > 0
 
 
-class Maze(pd.DataFrame):
-    def __init__(self, lines: np.int8, collumns: np.int8):
+class Maze():
+    def __init__(self, side_size: np.int32, source:list, target:list, blocked_area=0.2):
+        """Creates an empty Maze with an matrix representing its paths, the paths are generated randomly
+
+        blocked_area: percentage of total area there will be blocked, the positions chosen are random"""
         # Generating empty matrix then filling with -1
         # It's faster than use np.full
-        matrix = np.empty((lines, collumns), dtype=np.int8)
-        matrix.fill(-1)
-
-        # This class behave just like an DataFrame
-        super(Maze, self).__init__(matrix, dtype=np.int8)
-        return
-
-    def generate(self,
-                 source_posX: np.int8, source_posY: np.int8,
-                 target_posX: np.int8, target_posY: np.int8,
-                 all_paths=False):
-        """
-        :param source_posX: TO DO
-        :all_paths: Generate an auxiliar representation of the maze in csv with all costs for visualization
-        """
-        # Getting the shape of this DataFrame
-        lines = self.shape[0]
-        collumns = self.shape[1]
-
-        # Setting the value of each node with the following value:
-        # Distance between source and a node + Distance between this
-        # node and the target
-        self.iat[source_posX, source_posY] = 0
-        self.iat[target_posX, target_posY] = -3
-
-        distfrom_source = 1
-        total_of_items = lines * collumns
-        unblocked = 2
-        blocked = 0
+        self.matrix = np.empty([side_size, side_size], dtype=np.int32)
+        self.matrix.fill(-1)
 
         # Blocking randomly positions
-        for i in np.arange(0, lines):
-            for j in np.arange(0, collumns):
-                if randint(0, 6) > 5 and self.iat[i, j] == -1:
-                    self.iat[i, j] = -2
-                    blocked += 1
+        number_of_blocks = np.int32(
+            self.matrix.shape[0] * self.matrix.shape[1] * blocked_area)
+        blockedX = np.random.randint(
+            0, self.matrix.shape[0], size=number_of_blocks, dtype=np.int32)
+        blockedY = np.random.randint(
+            0, self.matrix.shape[1], size=number_of_blocks, dtype=np.int32)
 
-        self.to_csv(path_or_buf='maze.csv', index=False, header=False)
+        self.matrix[blockedX, blockedY] = -2
 
-        if all_paths:
-            # Filling the unblocked spaces
-            while unblocked + blocked < total_of_items:
-                for i in np.arange(source_posX - distfrom_source,
-                                   source_posX + distfrom_source + 1):
-                    for j in np.arange(source_posY - distfrom_source,
-                                       source_posY + distfrom_source + 1):
-                        if i < lines and j < collumns and i >= 0 and j >= 0:
-                            if self.iat[i, j] == -1:
-                                if np.abs(i - target_posX) > \
-                                        np.abs(j - target_posY):
-                                    distfrom_end = np.abs(i - target_posX)
-                                else:
-                                    distfrom_end = np.abs(j - target_posY)
+        self.matrix[source[0], source[1]] = 0
+        self.matrix[target[0], target[1]] = -3
 
-                                self.iat[i, j] = distfrom_source + distfrom_end
-                                unblocked += 1
-                        j += 1
-                    i += 1
-                distfrom_source += 1
+        return
 
-            self.to_csv(path_or_buf='maze_all_path.csv',
-                        index=False, header=False)
+    def print_maze(self, path=[]):
+        if path:
+            for p in path:
+                if self.matrix[tuple(p[0])] == -1:
+                    self.matrix[tuple(p[0])] = -4
+
+        for i in np.arange(0, self.matrix.shape[0], dtype=np.int32):
+            for j in np.arange(0, self.matrix.shape[1], dtype=np.int32):
+                if self.matrix[i, j] == -2:
+                    print("+", end=' ')
+                elif self.matrix[i, j] == 0:
+                    print("@", end=' ')
+                elif self.matrix[i, j] == -3:
+                    print("?", end=' ')
+                elif self.matrix[i, j] == -4:
+                    print("o", end=' ')
+                else:
+                    print(".", end=' ')
+            print("")
