@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     if path:
         print("Search finished: Path Found")
-        # Uncomment the line below to get an visual output
-        # maze.print_maze(path=path)
+        # Comment the line below to toggle off the fancy visual output. (faster)
+        maze.print_maze(path=path)
     else:
         print("Search finished: No path from source to target available.")
