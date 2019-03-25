@@ -146,6 +146,7 @@ def astar(matrix: np.ndarray, source: list, target: list):
                     if successor.__eq__(node):
                         if successor.total_cost < node.total_cost:
                             nodes_open.pop(i)
+                            break
                         else:
                             raise UnwantedNode(successor, nodes_open)
             except UnwantedNode:
@@ -155,13 +156,20 @@ def astar(matrix: np.ndarray, source: list, target: list):
 
         nodes_closed.append(minor)
 
-    return
+    return None
 
 
 if __name__ == '__main__':
-    side_size = 50
-    source = [0, 0]
-    target = [side_size - 1, 0]
-    maze = Maze(side_size, source, target, blocked_area=0.4)
+    # Showing off usage
+    side_size = np.random.randint(10, 50)
+    source = [np.random.randint(0, side_size), np.random.randint(0, side_size)]
+    target = [np.random.randint(0, side_size), np.random.randint(0, side_size)]
+    maze = Maze(side_size, source, target, blocked_area=0.6)
     path = astar(maze.matrix, source, target)
-    maze.print_maze(path=path)
+
+    if path:
+        print("Search finished: Path Found")
+        # Uncomment the line below to get an visual output
+        # maze.print_maze(path=path)
+    else:
+        print("Search finished: No path from source to target available.")
