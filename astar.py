@@ -31,6 +31,22 @@ class Node():
             self.position[1] == other.position[1]
 
 
+class UnwantedNode(Exception):
+    """Exception raised if a node that would be appended
+    is unwanted because is already appended on that list.
+
+    Attributes:
+        nd -- node involved
+        lst -- list involved
+        message -- explanation of the error
+    """
+
+    def __init__(self, nd: Node, lst: list):
+        self.message = "Unable to add a node to this list"
+        self.nd = str(nd)
+        self.lst = str(lst)
+
+
 def get_successors_coord(root: Node):
     return np.array([
         [root.position[0] + 0, root.position[1] - 1],
@@ -57,9 +73,12 @@ def get_successors(root: Node, matrix: np.ndarray):
 
             node = Node(coord)
             node.parent = root
+            if root:
+                node.distfrom_source = root.distfrom_source + 1
             suc_list.append(node)
 
     return suc_list
+
 
 def get_minor_cost(node_list: list):
     minor_cost = 0
@@ -75,17 +94,7 @@ def get_minor_cost(node_list: list):
 def euclidian_dist(coordA: list, coordB: list):
     # It's not needed to find the square root, because is crescent
     # and will not make difference in this result
-    return (coordA[0] - coordB[0])** 2 + (coordA[1] - coordB[1])** 2
-    
-def debug(minor:list, nodes_open:list, nodes_closed:list):
-    print("minor \t", minor.position)
-
-    # for node in nodes_open:
-    #     print("open\t", node.position)
-    # for node in nodes_closed:
-    #     print(node.position)
-
-    return
+    return (coordA[0] - coordB[0]) ** 2 + (coordA[1] - coordB[1]) ** 2
 
 
 def astar(matrix: np.ndarray, source: list, target: list):
@@ -110,22 +119,16 @@ def astar(matrix: np.ndarray, source: list, target: list):
 
     while nodes_open:
         minor = get_minor_cost(nodes_open)
-
-        # debug(minor, nodes_open, nodes_closed)
-        
         successors = get_successors(minor, matrix)
 
         for successor in successors:
+            successor.heuristic = \
+                euclidian_dist(successor.position, target)
+
+            successor.total_cost = \
+                successor.distfrom_source + successor.heuristic
+
             if successor.__eq__(target_node):
-                successor.distfrom_source = \
-                    successor.parent.distfrom_source + 1
-
-                successor.heuristic = \
-                    euclidian_dist(successor.position, target)
-
-                successor.total_cost = \
-                    successor.distfrom_source + successor.heuristic
-
                 it = successor
                 path = list()
 
@@ -135,27 +138,21 @@ def astar(matrix: np.ndarray, source: list, target: list):
 
                 return path[::-1]
 
-            i = 0
-            useless = False
-            while i < len(nodes_open) and not useless:
-                if successor.__eq__(nodes_open[i]):
-                    useless = True
-                i += 1
-
-            if useless:
+            if successor in nodes_closed:
                 continue
 
-            i = 0
-            while i < len(nodes_closed) and not useless:
-                if successor.__eq__(nodes_closed[i]):
-                    useless = True
-                i += 1
-
-            if useless:
+            try:
+                for i, node in enumerate(nodes_open):
+                    if successor.__eq__(node):
+                        if successor.total_cost < node.total_cost:
+                            nodes_open.pop(i)
+                        else:
+                            raise UnwantedNode(successor, nodes_open)
+            except UnwantedNode:
                 continue
-            else:
-                nodes_open.append(successor)
-        
+
+            nodes_open.append(successor)
+
         nodes_closed.append(minor)
 
     return
@@ -164,7 +161,7 @@ def astar(matrix: np.ndarray, source: list, target: list):
 if __name__ == '__main__':
     side_size = 50
     source = [0, 0]
-    target = [side_size -1, side_size -1]
+    target = [side_size - 1, 0]
     maze = Maze(side_size, source, target, blocked_area=0.4)
     path = astar(maze.matrix, source, target)
     maze.print_maze(path=path)
