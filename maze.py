@@ -7,7 +7,7 @@
 #   Tema: Busca Heurística vs Busca Cega
 #   Equipe:   Daniel Eduardo Vieira, 1366424
 #           Saulo Silva, XXXXXX
-#           Diego 'Foobar', XXXXXX
+#           Diego Mamprim, 1937537
 #   Prof.: Fabro
 ###
 
