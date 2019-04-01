@@ -15,10 +15,135 @@ import numpy as np
 from maze import Maze
 
 
+class PositionException(Exception):
+    def __init__(self):
+        self.msg = "Unable to find this position"
+
+
+class Position():
+    """
+        N.W---N----N.E
+
+        W----Cell----E
+
+        S.W---S----S.E
+
+        6 - N -->  North
+        5 - N.E--> North-East
+        4 - E -->  East
+        3 - S.E--> South-East
+        2 - S -->  South
+        1 - S.W--> South-West
+        0 - W -->  West
+        7 - N.W--> North-West
+
+        def translateDirection(p: int):
+            if (p == 0):
+                return 'W'
+            elif (p == 1):
+                return 'SW'
+            elif (p == 2):
+                return 'S'
+            elif (p == 3):
+                return 'SE'
+            elif (p == 4):
+                return 'E'
+            elif (p == 5):
+                return 'NE'
+            elif (p == 6):
+                return 'N'
+            elif (p == 7):
+                return 'NW'
+
+            return None
+    """
+
+    def __init__(self, x: int, y: int, direction: int):
+        self.x = x
+        self.y = y
+        self.direction = direction
+
+    def __eq__(self, other):
+        return self.x == other.x and \
+            self.y == other.y and \
+            self.direction == other.direction
+
+    def getFoward(self):
+        if (self.direction == 0):
+            return Position(self.x, self.y - 1, self.direction)
+        elif (self.direction == 1):
+            return Position(self.x + 1, self.y - 1, self.direction)
+        elif (self.direction == 2):
+            return Position(self.x + 1, self.y, self.direction)
+        elif (self.direction == 3):
+            return Position(self.x + 1, self.y + 1, self.direction)
+        elif (self.direction == 4):
+            return Position(self.x, self.y + 1, self.direction)
+        elif (self.direction == 5):
+            return Position(self.x - 1, self.y + 1, self.direction)
+        elif (self.direction == 6):
+            return Position(self.x - 1, self.y, self.direction)
+        elif (self.direction == 7):
+            return Position(self.x - 1, self.y - 1, self.direction)
+        else:
+            raise PositionException()
+
+    def getLeft(self):
+        if (self.direction == 0):
+            return Position(self.x, self.y, 7)
+        else:
+            return Position(self.x, self.y, self.direction - 1)
+
+    def getRight(self):
+        if (self.direction == 7):
+            return Position(self.x, self.y, 0)
+        else:
+            return Position(self.x, self.y, self.direction + 1)
+
+    def turnLeft(self):
+        if (self.direction == 0):
+            self.direction = 7
+        else:
+            self.direction -= 1
+        return
+
+    def turnRight(self):
+        if (self.direction == 7):
+            self.direction = 0
+        else:
+            self.direction += 1
+        return
+
+    def moveFoward(self):
+        if (self.direction == 0):
+            self.y -= 1
+        elif (self.direction == 1):
+            self.x += 1
+            self.y -= 1
+        elif (self.direction == 2):
+            self.x += 1
+        elif (self.direction == 3):
+            self.x += 1
+            self.y += 1
+        elif (self.direction == 4):
+            self.y += 1
+        elif (self.direction == 5):
+            self.x -= 1
+            self.y += 1
+        elif (self.direction == 6):
+            self.x -= 1
+        elif (self.direction == 7):
+            self.x -= 1
+            self.y -= 1
+        else:
+            raise PositionException()
+        return
+
+
 class Node():
     """This class is used to represent the nodes in a path"""
 
-    def __init__(self, position: list):
+    def __init__(self, position: Position):
         self.position = position
         self.parent = None
         self.distfrom_source = -1
@@ -27,8 +152,7 @@ class Node():
         return
 
     def __eq__(self, other):
-        return self.position[0] == other.position[0] and \
-            self.position[1] == other.position[1]
+        return self.position.__eq__(other.position)
 
 
 class UnwantedNode(Exception):
@@ -41,40 +165,40 @@ class UnwantedNode(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, nd: Node, lst: list):
+    def __init__(self):
         self.message = "Unable to add a node to this list"
-        self.nd = str(nd)
-        self.lst = str(lst)
+        # self.nd = str(nd)
+        # self.lst = str(lst)
+        return
 
 
-def get_successors_coord(root: Node):
-    return np.array([
-        [root.position[0] + 0, root.position[1] - 1],
-        [root.position[0] + 0, root.position[1] + 1],
-        [root.position[0] - 1, root.position[1] + 0],
-        [root.position[0] + 1, root.position[1] + 0],
-        [root.position[0] - 1, root.position[1] - 1],
-        [root.position[0] - 1, root.position[1] + 1],
-        [root.position[0] + 1, root.position[1] - 1],
-        [root.position[0] + 1, root.position[1] + 1]
-    ],
-        dtype=np.int32)
+def get_successors_pos(root: Node):
+    return [root.position.getLeft(),
+            root.position.getRight(),
+            root.position.getFoward()]
 
 
 def get_successors(root: Node, matrix: np.ndarray):
-    suc_coord = get_successors_coord(root)
+    suc_pos = get_successors_pos(root)
     suc_list = list()
-    for coord in suc_coord:
-        if coord[0] >= 0 and \
-            coord[0] < matrix.shape[0] and \
-            coord[1] >= 0 and \
-                coord[1] < matrix.shape[1] and \
-                matrix[coord[0], coord[1]] != -2:
+    for pos in suc_pos:
+        if pos.x >= 0 and \
+            pos.x < matrix.shape[0] and \
+            pos.y >= 0 and \
+                pos.y < matrix.shape[1] and \
+                matrix[pos.x, pos.y] != -2:
 
-            node = Node(coord)
+            node = Node(pos)
             node.parent = root
+
             if root:
-                node.distfrom_source = root.distfrom_source + 1
+                if root.position.x == node.position.x and \
+                        root.position.y == node.position.y and \
+                        root.position.direction == node.position.direction:
+                    node.distfrom_source = root.distfrom_source + 1
+                else:
+                    node.distfrom_source = root.distfrom_source
+
             suc_list.append(node)
 
     return suc_list
@@ -91,13 +215,13 @@ def get_minor_cost(node_list: list):
     return node_list.pop(minor_index)
 
 
-def euclidian_dist(coordA: list, coordB: list):
+def euclidian_dist(coordA: Position, coordB: Position):
     # It's not needed to find the square root, because is crescent
     # and will not make difference in this result
-    return (coordA[0] - coordB[0]) ** 2 + (coordA[1] - coordB[1]) ** 2
+    return (coordA.x - coordB.x) ** 2 + (coordA.y - coordB.y) ** 2
 
 
-def astar(matrix: np.ndarray, source: list, target: list):
+def astar(matrix: np.ndarray, source: Position, target: Position):
     """Returns a list of tuples as a path from the given
     start to the given end in the given maze
     maze: Maze object used as environment
@@ -114,9 +238,6 @@ def astar(matrix: np.ndarray, source: list, target: list):
     src.heuristic = euclidian_dist(source, target)
     nodes_open.append(src)
 
-    # Create the target node for comparison
-    target_node = Node(target)
-
     while nodes_open:
         minor = get_minor_cost(nodes_open)
         successors = get_successors(minor, matrix)
@@ -128,17 +249,23 @@ def astar(matrix: np.ndarray, source: list, target: list):
             successor.total_cost = \
                 successor.distfrom_source + successor.heuristic
 
-            if successor.__eq__(target_node):
+            if euclidian_dist(successor.position, target) == 0:
                 it = successor
                 path = list()
 
                 while it.parent:
-                    path.append([it.position])
+                    path.append([it.position.x,
+                                 it.position.y,
+                                 it.position.direction])
                     it = it.parent
 
                 return path[::-1]
 
-            if successor in nodes_closed:
+            try:
+                for i, node in enumerate(nodes_closed):
+                    if successor.__eq__(node):
+                        raise UnwantedNode()
+            except UnwantedNode:
                 continue
 
             try:
@@ -148,7 +275,7 @@ def astar(matrix: np.ndarray, source: list, target: list):
                             nodes_open.pop(i)
                             break
                         else:
-                            raise UnwantedNode(successor, nodes_open)
+                            raise UnwantedNode()
             except UnwantedNode:
                 continue
 
@@ -162,9 +289,17 @@ def astar(matrix: np.ndarray, source: list, target: list):
 if __name__ == '__main__':
     # Showing off usage
     side_size = np.random.randint(10, 50)
-    source = [np.random.randint(0, side_size), np.random.randint(0, side_size)]
-    target = [np.random.randint(0, side_size), np.random.randint(0, side_size)]
-    maze = Maze(side_size, source, target, blocked_area=0.6)
+
+    source = Position(np.random.randint(0, side_size),
+                      np.random.randint(0, side_size), np.random.randint(0, 8))
+    target = Position(np.random.randint(0, side_size),
+                      np.random.randint(0, side_size), np.random.randint(0, 8))
+
+    maze = Maze(side_size,
+                [source.x, source.y],
+                [target.x, target.y],
+                blocked_area=0.6)
+
     path = astar(maze.matrix, source, target)
 
     if path:

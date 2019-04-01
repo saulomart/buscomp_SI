@@ -14,6 +14,27 @@
 import numpy as np
 
 
+def translateDirection(p: int):
+    if (p == 0):
+        return 'W'
+    elif (p == 1):
+        return 'SW'
+    elif (p == 2):
+        return 'S'
+    elif (p == 3):
+        return 'SE'
+    elif (p == 4):
+        return 'E'
+    elif (p == 5):
+        return 'NE'
+    elif (p == 6):
+        return 'N'
+    elif (p == 7):
+        return 'NW'
+
+    return None
+
+
 class Maze():
     """
     Creates an empty Maze with an matrix representing its paths, the paths are generated randomly.
@@ -53,11 +74,12 @@ class Maze():
 
     def print_maze(self, path=[]):
         if path:
-            print("Path:")
+            print("Path ( Step [x, y, direction] ):")
             for i, p in enumerate(path):
-                print(i, p[0])
-                if self.matrix[tuple(p[0])] == -1:
-                    self.matrix[tuple(p[0])] = -4
+                print('\t', i, p, translateDirection(p[2]))
+                tpl = tuple([p[0], p[1]])
+                if self.matrix[tpl] == -1:
+                    self.matrix[tpl] = -4
 
         print("\n###\tMAZE\t###")
         for i in np.arange(0, self.matrix.shape[0], dtype=np.int32):
@@ -73,3 +95,5 @@ class Maze():
                 else:
                     print(" ", end=' ')
             print("")
+
+        print('\nLabels:\n\tS -- Source\n\tT -- TARGET\n\to -- PATH\n\t. -- BLOCKED WAY')
