@@ -288,23 +288,35 @@ def astar(matrix: np.ndarray, source: Position, target: Position):
 
 if __name__ == '__main__':
     # Showing off usage
-    side_size = np.random.randint(10, 50)
+    print('Insira os dados da busca:\n')
+    side_size = np.int32(input('\tTamanho do lado do labirinto: '))
+    # np.random.randint(10, 50)
 
-    source = Position(np.random.randint(0, side_size),
-                      np.random.randint(0, side_size), np.random.randint(0, 8))
-    target = Position(np.random.randint(0, side_size),
-                      np.random.randint(0, side_size), np.random.randint(0, 8))
+    source = Position(np.int32(input('\tCoordenada X do agente: ')),
+                      np.int32(input('\tCoordenada Y do agente: ')),
+                      np.random.randint(0, 8, dtype=np.int8))
+
+    target = Position(np.int32(input('\tCoordenada X do destino: ')),
+                      np.int32(input('\tCoordenada Y do destino: ')),
+                      np.random.randint(0, 8, dtype=np.int8))
+
+    print('\n\tAgora só falta definir o percentual máximo de caminhos',
+          '\n\tbloqueados possíveis, pode ser qualquer valor positivo ou',
+          '\n\tzero. Esse valor é um multiplicador que será usado para',
+          '\n\tgerar os bloqueios randomicamente, junto com o labirinto,',
+          '\n\tpor isso não é recomendado um número maior que 0.6 caso',
+          '\n\tseja desejado que exista pelo menos um caminho disponível')
 
     maze = Maze(side_size,
                 [source.x, source.y],
                 [target.x, target.y],
-                blocked_area=0.6)
+                np.float(input('\n\t> Valor do multiplicador: ')))
 
     path = astar(maze.matrix, source, target)
 
     if path:
-        print("Search finished: Path Found")
+        print("\nSearch finished: Path Found")
         # Comment the line below to toggle off the fancy visual output. (faster)
         maze.print_maze(path=path)
     else:
-        print("Search finished: No path from source to target available.")
+        print("\nSearch finished: No path from source to target available.")
