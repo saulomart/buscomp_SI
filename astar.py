@@ -88,26 +88,26 @@ class Position():
         else:
             raise PositionException()
 
-    def getLeft(self):
+    def getRight(self):
         if (self.direction == 0):
             return Position(self.x, self.y, 7)
         else:
             return Position(self.x, self.y, self.direction - 1)
 
-    def getRight(self):
+    def getLeft(self):
         if (self.direction == 7):
             return Position(self.x, self.y, 0)
         else:
             return Position(self.x, self.y, self.direction + 1)
 
-    def turnLeft(self):
+    def turnRight(self):
         if (self.direction == 0):
             self.direction = 7
         else:
             self.direction -= 1
         return
 
-    def turnRight(self):
+    def turnLeft(self):
         if (self.direction == 7):
             self.direction = 0
         else:
